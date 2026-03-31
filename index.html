@@ -15,10 +15,8 @@ canvas { position:fixed; top:0; left:0; }
 #bar { position:fixed;bottom:0;left:0;height:1px;background:linear-gradient(90deg,#8B0000,#4488cc,#8B0000);z-index:10;width:0;animation:bg 2s ease .5s forwards; }
 @keyframes bg { to{width:100%;} }
 #bl { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font:9px "Courier New",monospace;letter-spacing:4px;color:#111;text-transform:uppercase;z-index:10;opacity:0;animation:fi 1s ease 4s forwards; }
-#inc { position:fixed;bottom:9vh;left:50%;transform:translateX(-50%);font:10px "Courier New",monospace;letter-spacing:.6em;color:rgba(255,255,255,.25);text-transform:uppercase;z-index:10;opacity:0;animation:fi 1s 3s ease forwards; }
-.cur { display:inline-block;width:5px;height:9px;background:#4488cc;vertical-align:middle;margin-left:3px;animation:bl 1s step-end 4s infinite;opacity:0;animation-fill-mode:forwards; }
+#tag { position:fixed;bottom:24px;right:32px;z-index:10;font:8px "Courier New",monospace;letter-spacing:3px;color:#1a1a1a;text-transform:uppercase;opacity:0;animation:fi 1s ease 5s forwards; }
 @keyframes fi { to{opacity:1;} }
-@keyframes bl { 0%,100%{opacity:1;}50%{opacity:0;} }
 </style>
 </head>
 <body>
@@ -27,7 +25,7 @@ canvas { position:fixed; top:0; left:0; }
 <div id="tr"><span id="c1">BID 00000.00</span><span id="c2" class="hi">MID 00000.00</span><span id="c3">ASK 00000.00</span></div>
 <div id="bar"></div>
 <div id="bl">Mentorship Program &mdash; 2026</div>
-<div id="inc">INCOMING<span class="cur"></span></div>
+<div id="tag">Getulians</div>
 
 <script>
 const cv = document.getElementById('c');
@@ -42,6 +40,12 @@ const G = {
   T:[[1,1,1,1,1],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]],
   L:[[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,1]],
   S:[[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,0],[0,1,1,1,0],[0,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
+  I:[[1,1,1,1,1],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[1,1,1,1,1]],
+  N:[[1,0,0,0,1],[1,1,0,0,1],[1,0,1,0,1],[1,0,0,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1]],
+  C:[[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,1],[0,1,1,1,0]],
+  O:[[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
+  M:[[1,0,0,0,1],[1,1,0,1,1],[1,0,1,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1]],
+  G:[[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,0],[1,0,1,1,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
 };
 const BMAP_R = 7, BMAP_C = 29; // 5×5 + 4×1 gap
 const BMAP = [];
@@ -50,6 +54,16 @@ for (let r = 0; r < BMAP_R; r++) {
   ['A','T','L','A','S'].forEach(ch => { row.push(...G[ch][r], 0); });
   row.pop();
   BMAP.push(row);
+}
+
+// ── INCOMING bitmap (8 letters × 5 + 7 gaps = 47 cols) ──────────
+const IMAP_R = 7, IMAP_C = 47;
+const IMAP = [];
+for (let r = 0; r < IMAP_R; r++) {
+  const row = [];
+  ['I','N','C','O','M','I','N','G'].forEach(ch => { row.push(...G[ch][r], 0); });
+  row.pop();
+  IMAP.push(row);
 }
 
 // ── L3 MBO order stream ─────────────────────────────────────────
@@ -166,6 +180,35 @@ function getAtlasPixel(row, col) {
   return BMAP[lri][lci];
 }
 
+function getIncomingPixel(row, col) {
+  const atlasRpp = (0.78 * H) / BMAP_R / CH;
+  const atlasBot = (rowCount + BMAP_R * atlasRpp) / 2;
+  const bmpW = 0.44 * W, bmpH = 0.09 * H;
+  const rpp = bmpH / IMAP_R / CH;
+  const cpp = bmpW / IMAP_C / CW;
+  const r0 = atlasBot + 2;
+  const c0 = (colCount - IMAP_C * cpp) / 2;
+  const lri = Math.floor((row - r0) / rpp);
+  const lci = Math.floor((col - c0) / cpp);
+  if (lri < 0 || lri >= IMAP_R || lci < 0 || lci >= IMAP_C) return 0;
+  return IMAP[lri][lci];
+}
+
+function getDotsPixel(row, col) {
+  const atlasRpp = (0.78 * H) / BMAP_R / CH;
+  const atlasBot = (rowCount + BMAP_R * atlasRpp) / 2;
+  const incBot = atlasBot + 2 + IMAP_R * ((0.09 * H) / IMAP_R / CH);
+  const dotSz = 2, gap = 3;
+  const c0 = Math.floor((colCount - (3*dotSz + 2*gap)) / 2);
+  const r0 = Math.ceil(incBot + 1.5);
+  const dr = row - r0, dc = col - c0;
+  if (dr < 0 || dr >= dotSz || dc < 0 || dc >= 3*dotSz + 2*gap) return -1;
+  for (let i = 0; i < 3; i++) {
+    if (dc >= i*(dotSz+gap) && dc < i*(dotSz+gap)+dotSz) return i;
+  }
+  return -1;
+}
+
 // ── Render ─────────────────────────────────────────────────────
 function draw(now) {
   updateStream(now);
@@ -176,6 +219,8 @@ function draw(now) {
   cx.font = FS + 'px "Courier New",monospace';
   cx.textAlign = 'left';
 
+  const dotPhase = Math.floor(now / 350) % 3;
+
   for (let r = 0; r < rowCount; r++) {
     const row = rowData[r];
     if (!row || row.length === 0) continue;
@@ -183,12 +228,18 @@ function draw(now) {
 
     for (let c = 0; c < row.length && c < colCount; c++) {
       const { ch, isBid } = row[c];
-      const inAtlas = getAtlasPixel(r, c) === 1;
+      const inAtlas    = getAtlasPixel(r, c) === 1;
+      const inIncoming = !inAtlas && getIncomingPixel(r, c) === 1;
+      const dotIdx     = (!inAtlas && !inIncoming) ? getDotsPixel(r, c) : -1;
 
       let color;
       if (inAtlas) {
         if (isBid) color = 'rgba(240,240,240,0.92)';
         else       color = 'rgba(139,0,0,0.92)';
+      } else if (inIncoming) {
+        color = 'rgba(68,136,204,0.55)';
+      } else if (dotIdx >= 0) {
+        color = dotIdx === dotPhase ? 'rgba(68,136,204,0.9)' : 'rgba(80,80,80,0.55)';
       } else {
         color = 'rgba(80,80,80,0.55)';
       }
