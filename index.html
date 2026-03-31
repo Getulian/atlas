@@ -17,15 +17,14 @@ canvas { position:fixed; top:0; left:0; }
 #bl { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font:9px "Courier New",monospace;letter-spacing:4px;color:#111;text-transform:uppercase;z-index:10;opacity:0;animation:fi 1s ease 4s forwards; }
 #inc { position:fixed;bottom:5vh;left:50%;transform:translateX(-50%);font:12px "Courier New",monospace;letter-spacing:.5em;color:rgba(57,255,20,0.75);text-transform:uppercase;z-index:10;opacity:0;animation:fi 1s 3s ease forwards;white-space:nowrap; }
 .cur { display:inline-block;width:5px;height:11px;background:rgba(57,255,20,0.9);vertical-align:middle;margin-left:4px;animation:bl 1s step-end 4s infinite;opacity:0;animation-fill-mode:forwards; }
-#tag { position:fixed;bottom:24px;right:32px;z-index:10;font:9px "Courier New",monospace;letter-spacing:3px;color:rgba(160,160,160,0.6);text-transform:uppercase;opacity:0;animation:fi 1s ease 5s forwards; }
+#tag { position:fixed;bottom:24px;right:32px;z-index:10;font:9px "Courier New",monospace;letter-spacing:3px;color:rgba(255,30,30,0.9);text-transform:uppercase;opacity:0;animation:fi 1s ease 5s forwards; }
 @keyframes fi { to{opacity:1;} }
 @keyframes bl { 0%,100%{opacity:1;}50%{opacity:0;} }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="tl"><div class="n">L3 &mdash; MBO</div><div class="s">Market by Order</div></div>
-<div id="tr"><span id="c1">BID 00000.00</span><span id="c2" class="hi">MID 00000.00</span><span id="c3">ASK 00000.00</span></div>
+<div id="tr"><span id="c1">BID 00000.00</span><span id="c3">ASK 00000.00</span></div>
 <div id="bar"></div>
 <div id="bl">Mentorship Program &mdash; 2026</div>
 <div id="inc">INCOMING<span class="cur"></span></div>
@@ -147,7 +146,6 @@ function updateStream(now) {
 
   // Update UI
   document.getElementById('c1').textContent = 'BID ' + (mid - TICK*0.5).toFixed(2);
-  document.getElementById('c2').textContent = 'MID ' + mid.toFixed(2);
   document.getElementById('c3').textContent = 'ASK ' + (mid + TICK*0.5).toFixed(2);
 }
 
