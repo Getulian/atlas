@@ -6,228 +6,210 @@
 <title>ATLAS</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#000; overflow:hidden; width:100vw; height:100vh; }
-canvas { position:fixed; top:0; left:0; display:block; }
-#tl { position:fixed; top:26px; left:36px; z-index:10; font:10px "Courier New",monospace; text-transform:uppercase; letter-spacing:4px; line-height:1.8; }
-#tl .n { color:#8B0000; }
-#tl .s { color:#1e1e1e; }
-#tr { position:fixed; top:26px; right:36px; z-index:10; text-align:right; font:10px "Courier New",monospace; letter-spacing:3px; line-height:1.8; }
-#tr span { display:block; color:#1a1a1a; }
-#tr span.hi { color:#4488cc; }
-#incoming {
-  position:fixed; bottom:10vh; left:50%; transform:translateX(-50%);
-  z-index:10; font:11px "Courier New",monospace; letter-spacing:.6em;
-  color:rgba(255,255,255,.3); text-transform:uppercase;
-  opacity:0; animation:fadeIn 1s ease 3s forwards;
-}
-.cursor { display:inline-block; width:5px; height:10px; background:#4488cc;
-  margin-left:3px; vertical-align:middle;
-  animation:blink 1s step-end 4s infinite; opacity:0; animation-fill-mode:forwards; }
-@keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
-@keyframes fadeIn { to { opacity:1; } }
-#bar { position:fixed; bottom:0; left:0; height:1px;
-  background:linear-gradient(90deg,#8B0000,#4488cc,#8B0000);
-  z-index:10; width:0; animation:barGrow 2s ease .5s forwards; }
-@keyframes barGrow { to { width:100%; } }
-#bl { position:fixed; bottom:26px; left:50%; transform:translateX(-50%);
-  font:10px "Courier New",monospace; letter-spacing:4px; color:#1a1a1a;
-  text-transform:uppercase; z-index:10; opacity:0; animation:fadeIn 1s ease 4s forwards; }
+body { background:#020408; overflow:hidden; width:100vw; height:100vh; }
+canvas { position:fixed; top:0; left:0; }
+#tl { position:fixed;top:24px;left:32px;z-index:10;font:9px "Courier New",monospace;letter-spacing:4px;line-height:1.9;text-transform:uppercase; }
+#tl .n { color:#8B0000; } #tl .s { color:#111; }
+#tr { position:fixed;top:24px;right:32px;z-index:10;text-align:right;font:9px "Courier New",monospace;letter-spacing:3px;line-height:1.9; }
+#tr span { display:block;color:#0d0d0d; } #tr .hi { color:#4488cc; }
+#bar { position:fixed;bottom:0;left:0;height:1px;background:linear-gradient(90deg,#8B0000,#4488cc,#8B0000);z-index:10;width:0;animation:bg 2s ease .5s forwards; }
+@keyframes bg { to{width:100%;} }
+#bl { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font:9px "Courier New",monospace;letter-spacing:4px;color:#111;text-transform:uppercase;z-index:10;opacity:0;animation:fi 1s ease 4s forwards; }
+#inc { position:fixed;bottom:9vh;left:50%;transform:translateX(-50%);font:10px "Courier New",monospace;letter-spacing:.6em;color:rgba(255,255,255,.25);text-transform:uppercase;z-index:10;opacity:0;animation:fi 1s 3s ease forwards; }
+.cur { display:inline-block;width:5px;height:9px;background:#4488cc;vertical-align:middle;margin-left:3px;animation:bl 1s step-end 4s infinite;opacity:0;animation-fill-mode:forwards; }
+@keyframes fi { to{opacity:1;} }
+@keyframes bl { 0%,100%{opacity:1;}50%{opacity:0;} }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="tl"><div class="n">00 &mdash; 01</div><div class="s">Initialization</div></div>
-<div id="tr">
-  <span id="c1">LAT 48.8566</span>
-  <span id="c2" class="hi">LON 02.3522</span>
-  <span id="c3">ALT 00.0000</span>
-</div>
-<div id="incoming">INCOMING<span class="cursor"></span></div>
+<div id="tl"><div class="n">L3 &mdash; MBO</div><div class="s">Market by Order</div></div>
+<div id="tr"><span id="c1">BID 00000.00</span><span id="c2" class="hi">MID 00000.00</span><span id="c3">ASK 00000.00</span></div>
 <div id="bar"></div>
 <div id="bl">Mentorship Program &mdash; 2026</div>
+<div id="inc">INCOMING<span class="cur"></span></div>
 
 <script>
-const canvas = document.getElementById('c');
-const ctx    = canvas.getContext('2d');
+const cv = document.getElementById('c');
+const cx = cv.getContext('2d');
 let W, H;
-function resize(){ W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
-resize();
-window.addEventListener('resize', resize);
+function resize(){ W = cv.width = innerWidth; H = cv.height = innerHeight; }
+resize(); window.addEventListener('resize', resize);
 
-// ── Letter bitmaps (5×7 dot matrix) ──────────────────────────
-const GLYPHS = {
+// ── ATLAS bitmap (7 rows × 29 cols) ────────────────────────────
+const G = {
   A:[[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1]],
   T:[[1,1,1,1,1],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]],
   L:[[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,1]],
   S:[[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,0],[0,1,1,1,0],[0,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
 };
-
-// Build ATLAS bitmap (7 rows × 29 cols = 5 letters × 5px + 4 gaps × 1px)
-const BMAP_R = 7, BMAP_C = 29;
 const BMAP = [];
-for (let r = 0; r < BMAP_R; r++) {
+for (let r = 0; r < 7; r++) {
   const row = [];
-  for (const ch of ['A','T','L','A','S']) {
-    row.push(...GLYPHS[ch][r], 0);
-  }
+  ['A','T','L','A','S'].forEach(ch => { row.push(...G[ch][r], 0); });
   row.pop();
-  BMAP.push(row);
+  BMAP.push(row); // 29 cols
 }
 
-// ── Order book state ──────────────────────────────────────────
-const LEVELS = 80;
-const TICK   = 0.25;
-let mid      = 5234.75;
-let lastUpd  = 0;
+// ── L3 MBO order stream ─────────────────────────────────────────
+const FS = 7.5, CW = 4.55, CH = FS * 1.38;
+let mid = 5234.75, lastUpd = 0;
+const TICK = 0.25;
 
-const asks = Array.from({length:LEVELS}, () => ({ size: 50 + Math.floor(Math.random()*550), flash: 0 }));
-const bids = Array.from({length:LEVELS}, () => ({ size: 50 + Math.floor(Math.random()*550), flash: 0 }));
+// Pre-generate a pool of fake order IDs
+const OID_POOL = Array.from({length:500}, (_,i) => {
+  return '#' + (10000000 + Math.floor(Math.random()*89999999)).toString();
+});
 
-function updateOB(now) {
-  if (now - lastUpd < 150) return;
-  lastUpd = now;
-  mid += (Math.random() - 0.505) * TICK * 0.6;
-  mid = Math.round(mid / TICK) * TICK;
-  for (let k = 0; k < 4; k++) {
-    const side = Math.random() < .5 ? asks : bids;
-    const i = Math.floor(Math.random() * LEVELS);
-    side[i].size = Math.max(10, side[i].size + Math.floor((Math.random()-.4)*220));
-    side[i].flash = 1.0;
+// Scrolling order log
+let orders = [];
+function genOrder() {
+  const isBid = Math.random() < 0.5;
+  const lvl   = Math.floor(Math.random() * 15);
+  const price = isBid
+    ? Math.round((mid - (lvl + Math.random()) * TICK) * 100) / 100
+    : Math.round((mid + (lvl + Math.random()) * TICK) * 100) / 100;
+  const qty   = 1 + Math.floor(Math.random() * 499);
+  const now   = new Date();
+  const ts    = now.getHours().toString().padStart(2,'0') + ':' +
+                now.getMinutes().toString().padStart(2,'0') + ':' +
+                now.getSeconds().toString().padStart(2,'0') + '.' +
+                now.getMilliseconds().toString().padStart(3,'0');
+  const oid   = OID_POOL[Math.floor(Math.random()*OID_POOL.length)];
+  const type  = ['ADD ','MOD ','DEL '][Math.floor(Math.random()*3)];
+  return { ts, oid, price: price.toFixed(2), qty, isBid, type };
+}
+
+// Fill initial order grid
+let rowData = [];   // rowData[r] = array of {char, isBid}[]
+let colCount = 0;
+let rowCount = 0;
+
+function buildGrid() {
+  colCount = Math.ceil(W / CW);
+  rowCount = Math.ceil(H / CH);
+  rowData = [];
+
+  // Generate enough orders to fill all rows
+  // Each row = one order entry formatted as: "TS  OID  PRICE  QTY  TYPE"
+  // Entry width: 12+2+10+2+8+2+5+2+4 = ~47 chars → repeat across row width
+  for (let r = 0; r < rowCount; r++) {
+    rowData.push([]);
   }
-  asks.forEach(a => { if(a.flash>0) a.flash = Math.max(0, a.flash-.12); });
-  bids.forEach(b => { if(b.flash>0) b.flash = Math.max(0, b.flash-.12); });
+  refillGrid();
 }
 
-// ── Main draw ─────────────────────────────────────────────────
-const OB_FS  = 9;
-const OB_CW  = 5.42;   // char width at 9px Courier New
-const OB_CH  = OB_FS * 1.38;
-const BAR_W  = 18;
-const MAX_SZ = 700;
-// row content width: 8 (price) + 1 + 5 (size) + 1 + 18 (bar) = 33 chars
-const ROW_CHARS = 33;
-const ROW_PX    = ROW_CHARS * OB_CW;
+const ENTRY_FMT = (o) =>
+  o.ts + '  ' + o.oid + '  ' + o.price.padStart(8) + '  ' +
+  o.qty.toString().padStart(4) + '  ' + o.type + '  ';
 
-function isLit(screenRow, screenCol) {
-  // How many screen rows & cols per bitmap pixel
-  const totalRows = Math.floor(H / OB_CH);
-  const totalCols = Math.floor(W  / OB_CW);
-
-  // We want ATLAS to fill ~80% of screen width, ~75% of height, centered
-  const bmapW_px = 0.80 * W;
-  const bmapH_px = 0.75 * H;
-  const rpp = bmapH_px / BMAP_R / OB_CH;  // rows per bitmap pixel
-  const cpp = bmapW_px / BMAP_C / OB_CW;  // cols per bitmap pixel
-
-  const startRow = (totalRows - BMAP_R * rpp) / 2;
-  const startCol = (totalCols - BMAP_C * cpp) / 2;
-
-  const lr = Math.floor((screenRow - startRow) / rpp);
-  const lc = Math.floor((screenCol - startCol) / cpp);
-
-  if (lr < 0 || lr >= BMAP_R || lc < 0 || lc >= BMAP_C) return false;
-  return BMAP[lr][lc] === 1;
-}
-
-function drawOB(now) {
-  updateOB(now);
-  ctx.font = OB_FS + 'px "Courier New",monospace';
-  ctx.textAlign = 'left';
-
-  const totalRows = Math.floor(H / OB_CH);
-  const midRow    = Math.floor(totalRows / 2);
-  const totalCols = Math.ceil(W / OB_CW);
-
-  for (let r = 0; r < totalRows; r++) {
-    const y  = r * OB_CH + OB_FS;
-
-    // Which level?
-    const isAsk = r < midRow;
-    const lvlIdx = isAsk ? (midRow - 1 - r) : (r - midRow);
-    if (lvlIdx >= LEVELS) continue;
-
-    const level = isAsk ? asks[lvlIdx] : bids[lvlIdx];
-    const price = isAsk
-      ? mid + (lvlIdx + 0.5) * TICK
-      : mid - (lvlIdx + 0.5) * TICK;
-
-    const priceStr = price.toFixed(2).padStart(8);
-    const sizeStr  = level.size.toString().padStart(5);
-    const ratio    = Math.min(1, level.size / MAX_SZ);
-    const filled   = Math.round(ratio * BAR_W);
-    let bar = '';
-    for (let i = 0; i < BAR_W; i++) {
-      bar += i < filled - 1 ? '█' : i === filled - 1 ? '▓' : '░';
-    }
-    const rowStr = priceStr + ' ' + sizeStr + ' ' + bar;
-
-    // Render char by char with per-pixel brightness
-    for (let c = 0; c < rowStr.length && c < totalCols; c++) {
-      const ch  = rowStr[c];
-      const lit = isLit(r, c);
-      const fl  = level.flash;
-
-      let alpha, R, G, B;
-      if (lit) {
-        alpha = 0.75 + fl * 0.25;
-        if (r === midRow - 1 || r === midRow) {
-          // spread row — white
-          R = 200; G = 200; B = 200;
-        } else if (isAsk) {
-          R = 220 + fl*35; G = 60  + fl*20; B = 60  + fl*20;
-        } else {
-          R = 60  + fl*20; G = 120 + fl*40; B = 220 + fl*35;
+function refillGrid() {
+  for (let r = 0; r < rowCount; r++) {
+    if (rowData[r].length === 0) {
+      const o = genOrder();
+      const str = ENTRY_FMT(o);
+      const chars = [];
+      while (chars.length < colCount) {
+        for (let i = 0; i < str.length && chars.length < colCount; i++) {
+          chars.push({ ch: str[i], isBid: o.isBid });
         }
+      }
+      rowData[r] = chars;
+    }
+  }
+}
+
+function updateStream(now) {
+  if (now - lastUpd < 80) return;
+  lastUpd = now;
+
+  // Mid price walk
+  mid += (Math.random() - 0.505) * TICK * 0.5;
+  mid = Math.round(mid / TICK) * TICK;
+
+  // Replace random rows with new orders (scrolling effect)
+  const n = 2 + Math.floor(Math.random() * 4);
+  for (let k = 0; k < n; k++) {
+    const r = Math.floor(Math.random() * rowCount);
+    const o = genOrder();
+    const str = ENTRY_FMT(o);
+    const chars = [];
+    while (chars.length < colCount) {
+      for (let i = 0; i < str.length && chars.length < colCount; i++) {
+        chars.push({ ch: str[i], isBid: o.isBid });
+      }
+    }
+    rowData[r] = chars;
+  }
+
+  // Update UI
+  document.getElementById('c1').textContent = 'BID ' + (mid - TICK*0.5).toFixed(2);
+  document.getElementById('c2').textContent = 'MID ' + mid.toFixed(2);
+  document.getElementById('c3').textContent = 'ASK ' + (mid + TICK*0.5).toFixed(2);
+}
+
+// ── Pixel lookup for ATLAS ──────────────────────────────────────
+function getAtlasPixel(row, col) {
+  // Map screen position to ATLAS bitmap
+  // ATLAS fills ~78% width, ~72% height, centered
+  const bmpW = 0.78 * W, bmpH = 0.72 * H;
+  const rpp  = bmpH / 7 / CH;   // screen rows per bitmap pixel
+  const cpp  = bmpW / 29 / CW;  // screen cols per bitmap pixel
+  const r0   = (rowCount  - 7  * rpp) / 2;
+  const c0   = (colCount  - 29 * cpp) / 2;
+
+  const lr = (row - r0) / rpp;
+  const lc = (col - c0) / cpp;
+  const lri = Math.floor(lr), lci = Math.floor(lc);
+
+  if (lri < 0 || lri >= 7 || lci < 0 || lci >= 29) return 0;
+  return BMAP[lri][lci];
+}
+
+// ── Render ─────────────────────────────────────────────────────
+function draw(now) {
+  updateStream(now);
+  if (rowData.length !== rowCount) buildGrid();
+
+  cx.fillStyle = '#020408';
+  cx.fillRect(0, 0, W, H);
+  cx.font = FS + 'px "Courier New",monospace';
+  cx.textAlign = 'left';
+
+  for (let r = 0; r < rowCount; r++) {
+    const row = rowData[r];
+    if (!row || row.length === 0) continue;
+    const y = r * CH + FS;
+
+    for (let c = 0; c < row.length && c < colCount; c++) {
+      const { ch, isBid } = row[c];
+      const inAtlas = getAtlasPixel(r, c) === 1;
+
+      let color;
+      if (inAtlas) {
+        if (isBid) color = 'rgba(68,136,220,0.88)';
+        else       color = 'rgba(220,55,55,0.88)';
       } else {
-        // very dim background
-        alpha = 0.04 + fl * 0.04;
-        R = isAsk ? 80 : 30;
-        G = isAsk ? 20 : 50;
-        B = isAsk ? 20 : 80;
+        // Out-of-letter: near invisible, slight color hint
+        if (isBid) color = 'rgba(20,30,50,0.18)';
+        else       color = 'rgba(50,15,15,0.18)';
       }
 
-      ctx.fillStyle = `rgba(${Math.round(R)},${Math.round(G)},${Math.round(B)},${alpha})`;
-      ctx.fillText(ch, c * OB_CW, y);
+      cx.fillStyle = color;
+      cx.fillText(ch, c * CW, y);
     }
   }
 
-  // Spread indicator — center row
-  const midY = midRow * OB_CH + OB_FS;
-  ctx.fillStyle = 'rgba(150,150,150,0.18)';
-  ctx.font = OB_FS + 'px "Courier New",monospace';
-  const spreadLine = '─'.repeat(totalCols);
-  ctx.fillText(spreadLine, 0, midY);
-  ctx.fillStyle = 'rgba(200,200,200,0.3)';
-  const midLabel = '[ ' + mid.toFixed(2) + ' ]';
-  ctx.fillText(midLabel, W/2 - midLabel.length * OB_CW / 2, midY);
-}
-
-// ── Scanlines ─────────────────────────────────────────────────
-function scanlines() {
-  for (let y=0; y<H; y+=4) { ctx.fillStyle='rgba(0,0,0,0.07)'; ctx.fillRect(0,y,W,1); }
-}
-
-// ── Coords ────────────────────────────────────────────────────
-const c1el=document.getElementById('c1'), c2el=document.getElementById('c2'), c3el=document.getElementById('c3');
-let cf=0;
-function animCoords(){
-  if(++cf%20===0){
-    c1el.textContent='LAT '+(48.8566+(Math.random()-.5)*.001).toFixed(4);
-    c2el.textContent='LON '+(2.3522+(Math.random()-.5)*.001).toFixed(4);
-    c3el.textContent='ALT '+(Math.random()*.001).toFixed(4);
+  // Scanlines
+  for (let y = 0; y < H; y += 3) {
+    cx.fillStyle = 'rgba(0,0,0,0.06)';
+    cx.fillRect(0, y, W, 1);
   }
 }
 
-// ── Loop ──────────────────────────────────────────────────────
-function loop(ts) {
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, W, H);
-  drawOB(ts);
-  scanlines();
-  animCoords();
-  requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
+// ── Boot ───────────────────────────────────────────────────────
+buildGrid();
+(function loop(ts){ draw(ts); requestAnimationFrame(loop); })();
 </script>
 </body>
 </html>
