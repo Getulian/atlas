@@ -6,7 +6,7 @@
 <title>ATLAS</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#020408; overflow:hidden; width:100vw; height:100vh; }
+body { background:#000; overflow:hidden; width:100vw; height:100vh; }
 canvas { position:fixed; top:0; left:0; }
 #tl { position:fixed;top:24px;left:32px;z-index:10;font:9px "Courier New",monospace;letter-spacing:4px;line-height:1.9;text-transform:uppercase; }
 #tl .n { color:#8B0000; } #tl .s { color:#111; }
@@ -171,7 +171,7 @@ function draw(now) {
   updateStream(now);
   if (rowData.length !== rowCount) buildGrid();
 
-  cx.fillStyle = '#020408';
+  cx.fillStyle = '#000';
   cx.fillRect(0, 0, W, H);
   cx.font = FS + 'px "Courier New",monospace';
   cx.textAlign = 'left';
@@ -190,9 +190,7 @@ function draw(now) {
         if (isBid) color = 'rgba(68,136,220,0.88)';
         else       color = 'rgba(220,55,55,0.88)';
       } else {
-        // Out-of-letter: near invisible, slight color hint
-        if (isBid) color = 'rgba(20,30,50,0.18)';
-        else       color = 'rgba(50,15,15,0.18)';
+        color = 'rgba(80,80,80,0.55)';
       }
 
       cx.fillStyle = color;
