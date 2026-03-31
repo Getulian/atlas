@@ -36,19 +36,77 @@ let W, H;
 function resize(){ W = cv.width = innerWidth; H = cv.height = innerHeight; }
 resize(); window.addEventListener('resize', resize);
 
-// ── ATLAS bitmap (7 rows × 29 cols) ────────────────────────────
+// ── ATLAS Gothic bitmap (13 rows × 9 cols per letter) ──────────
+// Blackletter style: thick verticals, diamond terminals, ornate crossbars
 const G = {
-  A:[[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1]],
-  T:[[1,1,1,1,1],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]],
-  L:[[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,1]],
-  S:[[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,0],[0,1,1,1,0],[0,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
+  A:[
+    [0,0,0,1,1,1,0,0,0],
+    [0,0,1,0,0,0,1,0,0],
+    [0,1,1,0,0,0,1,1,0],
+    [0,1,0,0,0,0,0,1,0],
+    [1,1,0,0,0,0,0,1,1],
+    [1,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,1],
+    [1,1,0,0,0,0,0,1,1],
+    [0,1,0,0,0,0,0,1,0],
+    [0,1,1,0,0,0,1,1,0],
+    [0,0,1,0,0,0,1,0,0],
+    [0,0,0,1,1,1,0,0,0],
+  ],
+  T:[
+    [1,1,1,1,1,1,1,1,1],
+    [1,1,0,0,0,0,0,1,1],
+    [0,1,0,0,0,0,0,1,0],
+    [0,0,0,1,1,1,0,0,0],
+    [0,0,0,0,1,0,0,0,0],
+    [0,0,0,0,1,0,0,0,0],
+    [0,0,0,0,1,0,0,0,0],
+    [0,0,0,0,1,0,0,0,0],
+    [0,0,0,0,1,0,0,0,0],
+    [0,0,0,0,1,0,0,0,0],
+    [0,0,0,1,1,1,0,0,0],
+    [0,0,0,1,0,1,0,0,0],
+    [0,0,1,1,0,1,1,0,0],
+  ],
+  L:[
+    [1,1,1,0,0,0,0,0,0],
+    [0,1,0,0,0,0,0,0,0],
+    [1,1,0,0,0,0,0,0,0],
+    [1,0,0,0,0,0,0,0,0],
+    [1,0,0,0,0,0,0,0,0],
+    [1,0,0,0,0,0,0,0,0],
+    [1,0,0,0,0,0,0,0,0],
+    [1,0,0,0,0,0,0,0,0],
+    [1,0,0,0,0,0,0,0,0],
+    [1,1,0,0,0,0,0,0,0],
+    [0,1,0,0,0,0,0,0,0],
+    [0,1,1,0,0,0,0,1,1],
+    [0,0,1,1,1,1,1,1,0],
+  ],
+  S:[
+    [0,0,1,1,1,1,1,0,0],
+    [0,1,1,0,0,0,1,1,0],
+    [0,1,0,0,0,0,0,1,0],
+    [1,1,0,0,0,0,0,0,0],
+    [1,0,0,0,0,0,0,0,0],
+    [0,1,1,1,1,1,0,0,0],
+    [0,0,0,0,0,1,1,1,0],
+    [0,0,0,0,0,0,0,1,1],
+    [0,1,0,0,0,0,0,1,1],
+    [0,1,1,0,0,0,1,1,0],
+    [0,0,1,1,1,1,1,0,0],
+    [0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0],
+  ],
 };
+const BMAP_R = 13, BMAP_C = 53; // 5×9 + 4×2 gap
 const BMAP = [];
-for (let r = 0; r < 7; r++) {
+for (let r = 0; r < BMAP_R; r++) {
   const row = [];
-  ['A','T','L','A','S'].forEach(ch => { row.push(...G[ch][r], 0); });
-  row.pop();
-  BMAP.push(row); // 29 cols
+  ['A','T','L','A','S'].forEach(ch => { row.push(...G[ch][r], 0, 0); });
+  row.splice(-2); // remove last gap
+  BMAP.push(row);
 }
 
 // ── L3 MBO order stream ─────────────────────────────────────────
@@ -152,17 +210,16 @@ function updateStream(now) {
 function getAtlasPixel(row, col) {
   // Map screen position to ATLAS bitmap
   // ATLAS fills ~78% width, ~72% height, centered
-  const bmpW = 0.78 * W, bmpH = 0.72 * H;
-  const rpp  = bmpH / 7 / CH;   // screen rows per bitmap pixel
-  const cpp  = bmpW / 29 / CW;  // screen cols per bitmap pixel
-  const r0   = (rowCount  - 7  * rpp) / 2;
-  const c0   = (colCount  - 29 * cpp) / 2;
+  const bmpW = 0.82 * W, bmpH = 0.78 * H;
+  const rpp  = bmpH / BMAP_R / CH;
+  const cpp  = bmpW / BMAP_C / CW;
+  const r0   = (rowCount - BMAP_R * rpp) / 2;
+  const c0   = (colCount - BMAP_C * cpp) / 2;
 
-  const lr = (row - r0) / rpp;
-  const lc = (col - c0) / cpp;
-  const lri = Math.floor(lr), lci = Math.floor(lc);
+  const lri = Math.floor((row - r0) / rpp);
+  const lci = Math.floor((col - c0) / cpp);
 
-  if (lri < 0 || lri >= 7 || lci < 0 || lci >= 29) return 0;
+  if (lri < 0 || lri >= BMAP_R || lci < 0 || lci >= BMAP_C) return 0;
   return BMAP[lri][lci];
 }
 
